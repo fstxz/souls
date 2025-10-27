@@ -1,0 +1,9 @@
+[package]
+name = "souls"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+md5 = "0.8.0"
+rusqlite = { version = "0.37.0", features = ["bundled"]}
+smol = "2.0.2"
