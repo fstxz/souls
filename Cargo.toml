@@ -8,3 +8,5 @@ md5 = "0.8.0"
 rusqlite = { version = "0.37.0", features = ["bundled"]}
 smol = "2.0.2"
 argh = {version = "0.1.13", default-features = false, features = ["help"]}
+log = "0.4.28"
+simple_logger = "5.1.0"

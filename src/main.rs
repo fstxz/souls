@@ -49,6 +49,7 @@ struct Args {
 }
 
 fn main() -> Result<()> {
+    simple_logger::init()?;
     let args = argh::from_env::<Args>();
 
     setup_db()?;
@@ -56,11 +57,11 @@ fn main() -> Result<()> {
     smol::block_on(async {
         let users = Arc::new(RwLock::new(ConnectedUsers::default()));
         let listener = TcpListener::bind(("127.0.0.1", args.port)).await?;
-        println!("Listening on port {}", args.port);
+        log::info!("Listening on port {}", args.port);
 
         loop {
             let (stream, peer_addr) = listener.accept().await?;
-            println!("Accepted client: {peer_addr}");
+            log::info!("Accepted client: {peer_addr}");
 
             smol::spawn(handle_client(stream, users.clone())).detach();
         }
@@ -97,7 +98,7 @@ async fn handle_client(mut socket: TcpStream, users: Arc<RwLock<ConnectedUsers>>
                         continue;
                     }
                     Err(e) => {
-                        eprintln!("Error: {e}");
+                        log::error!("Error: {e}");
                         continue;
                     }
                 }
@@ -108,7 +109,7 @@ async fn handle_client(mut socket: TcpStream, users: Arc<RwLock<ConnectedUsers>>
 
     users.write().unwrap().users.remove(&socket_addr);
 
-    println!("Client disconnected.");
+    log::info!("Client disconnected.");
     Ok(())
 }
 
@@ -134,7 +135,7 @@ fn parse_message(
             response
         }
         _ => {
-            println!("Unknown server message code {code}, continuing");
+            log::warn!("Unknown server message code {code}, continuing");
             Ok(None)
         }
     }
