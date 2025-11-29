@@ -20,6 +20,7 @@ impl UserStatus {
 pub enum ServerMessage {
     Login = 1,
     SetWaitPort = 2,
+    GetPeerAddress = 3,
     GetUserStatus = 7,
     SetStatus = 28,
     SharedFoldersFiles = 35,
@@ -37,6 +38,7 @@ impl ServerMessage {
         match code {
             1 => Some(Self::Login),
             2 => Some(Self::SetWaitPort),
+            3 => Some(Self::GetPeerAddress),
             7 => Some(Self::GetUserStatus),
             28 => Some(Self::SetStatus),
             35 => Some(Self::SharedFoldersFiles),
@@ -55,6 +57,7 @@ impl ServerMessage {
         let response = match self {
             Self::Login => login(ctx),
             Self::SetWaitPort => set_wait_port(ctx),
+            Self::GetPeerAddress => get_peer_address(ctx),
             Self::GetUserStatus => get_user_status(ctx),
             Self::SetStatus => set_status(ctx),
             Self::SharedFoldersFiles => shared_folders_files(ctx),
@@ -121,6 +124,30 @@ fn set_wait_port(ctx: &mut Context) -> crate::Result<Option<BufferWriter>> {
     }
 
     Ok(None)
+}
+
+// https://github.com/nicotine-plus/nicotine-plus/blob/master/doc/SLSKPROTOCOL.md#server-code-3
+fn get_peer_address(ctx: &mut Context) -> crate::Result<Option<BufferWriter>> {
+    let username = ctx.reader.read_string()?;
+
+    let users = ctx.users.read().unwrap();
+    let ip = users
+        .name_addr_map
+        .get(&username)
+        .expect("username must be in the map");
+
+    let Some(user) = users.users.get(ip) else {
+        return Err(format!("user with this name doesn't exist ({username})").into());
+    };
+
+    let mut writer = BufferWriter::new();
+    writer.write_string(&user.name);
+    writer.write_u32(user.addr.ip().to_bits());
+    writer.write_u32(user.wait_port);
+    writer.write_u32(user.obfuscation_type);
+    writer.write_u16(user.obfuscated_port);
+
+    Ok(Some(writer))
 }
 
 // https://github.com/nicotine-plus/nicotine-plus/blob/master/doc/SLSKPROTOCOL.md#server-code-7

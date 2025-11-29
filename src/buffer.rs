@@ -85,6 +85,11 @@ impl BufferWriter {
         self
     }
 
+    pub fn write_u16(&mut self, value: u16) -> &mut Self {
+        self.buffer.extend_from_slice(&value.to_le_bytes());
+        self
+    }
+
     pub fn write_u32(&mut self, value: u32) -> &mut Self {
         self.buffer.extend_from_slice(&value.to_le_bytes());
         self
