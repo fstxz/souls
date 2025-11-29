@@ -25,6 +25,31 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync 
 #[derive(Default)]
 struct ConnectedUsers {
     users: HashMap<SocketAddrV4, User>,
+    name_addr_map: HashMap<String, SocketAddrV4>,
+}
+
+impl ConnectedUsers {
+    pub fn insert(&mut self, addr: SocketAddrV4, name: String) {
+        self.users.insert(
+            addr,
+            User {
+                name: name.clone(),
+                addr,
+                status: UserStatus::Online,
+                wait_port: 0,
+                obfuscation_type: 0,
+                obfuscated_port: 0,
+            },
+        );
+
+        self.name_addr_map.insert(name, addr);
+    }
+
+    fn remove(&mut self, addr: SocketAddrV4) {
+        if let Some(removed_user) = self.users.remove(&addr) {
+            self.name_addr_map.remove(&removed_user.name);
+        }
+    }
 }
 
 pub struct Context<'a, 'b> {
@@ -38,6 +63,9 @@ struct User {
     addr: SocketAddrV4,
     name: String,
     status: UserStatus,
+    wait_port: u32,
+    obfuscation_type: u32,
+    obfuscated_port: u16,
 }
 
 /// Soulseek server.
@@ -107,7 +135,8 @@ async fn handle_client(mut socket: TcpStream, users: Arc<RwLock<ConnectedUsers>>
         }
     }
 
-    users.write().unwrap().users.remove(&socket_addr);
+    let mut users = users.write().unwrap();
+    users.remove(socket_addr);
 
     log::info!("Client disconnected.");
     Ok(())

@@ -1,4 +1,4 @@
-use crate::{Context, User, buffer::BufferWriter};
+use crate::{Context, buffer::BufferWriter};
 
 pub enum UserStatus {
     Offline = 0,
@@ -99,25 +99,25 @@ fn login(ctx: &mut Context) -> crate::Result<Option<BufferWriter>> {
         .write_string(&hash)
         .write_bool(true);
 
-    ctx.users.write().unwrap().users.insert(
-        ctx.socket_addr,
-        User {
-            name: username,
-            addr: ctx.socket_addr,
-            status: UserStatus::Online,
-        },
-    );
+    let mut users = ctx.users.write().unwrap();
+    users.insert(ctx.socket_addr, username);
 
     Ok(Some(writer))
 }
 
 // https://github.com/nicotine-plus/nicotine-plus/blob/master/doc/SLSKPROTOCOL.md#server-code-2
 fn set_wait_port(ctx: &mut Context) -> crate::Result<Option<BufferWriter>> {
-    let _port = ctx.reader.read_u32()?;
+    let mut users = ctx.users.write().unwrap();
+
+    let Some(user) = users.users.get_mut(&ctx.socket_addr) else {
+        return Err(format!("user with this address doesn't exist ({})", ctx.socket_addr).into());
+    };
+
+    user.wait_port = ctx.reader.read_u32()?;
 
     if !ctx.reader.is_empty() {
-        let _obfuscation_type = ctx.reader.read_u32()?;
-        let _obfuscated_port = ctx.reader.read_u32()?;
+        user.obfuscation_type = ctx.reader.read_u32()?;
+        user.obfuscated_port = ctx.reader.read_u16()?;
     }
 
     Ok(None)
