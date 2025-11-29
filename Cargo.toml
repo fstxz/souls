@@ -7,3 +7,4 @@ edition = "2024"
 md5 = "0.8.0"
 rusqlite = { version = "0.37.0", features = ["bundled"]}
 smol = "2.0.2"
+argh = {version = "0.1.13", default-features = false, features = ["help"]}

@@ -4,6 +4,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use argh::FromArgs;
 use smol::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
@@ -39,12 +40,23 @@ struct User {
     status: UserStatus,
 }
 
+/// Soulseek server.
+#[derive(FromArgs)]
+struct Args {
+    /// port to listen on (default: 2242)
+    #[argh(option, short = 'p', default = "2242")]
+    port: u16,
+}
+
 fn main() -> Result<()> {
+    let args = argh::from_env::<Args>();
+
     setup_db()?;
+
     smol::block_on(async {
         let users = Arc::new(RwLock::new(ConnectedUsers::default()));
-        let listener = TcpListener::bind("127.0.0.1:2242").await?;
-        println!("Started");
+        let listener = TcpListener::bind(("127.0.0.1", args.port)).await?;
+        println!("Listening on port {}", args.port);
 
         loop {
             let (stream, peer_addr) = listener.accept().await?;
