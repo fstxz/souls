@@ -98,7 +98,7 @@ fn login(ctx: &mut Context) -> crate::Result<Option<BufferWriter>> {
     writer
         .write_bool(true)
         .write_string("Hello")
-        .write_u32(ctx.socket_addr.ip().to_bits())
+        .write_ip(ctx.socket_addr.ip())
         .write_string(&hash)
         .write_bool(true);
 
@@ -141,11 +141,12 @@ fn get_peer_address(ctx: &mut Context) -> crate::Result<Option<BufferWriter>> {
     };
 
     let mut writer = BufferWriter::new();
-    writer.write_string(&user.name);
-    writer.write_u32(user.addr.ip().to_bits());
-    writer.write_u32(user.wait_port);
-    writer.write_u32(user.obfuscation_type);
-    writer.write_u16(user.obfuscated_port);
+    writer
+        .write_string(&user.name)
+        .write_ip(user.addr.ip())
+        .write_u32(user.wait_port)
+        .write_u32(user.obfuscation_type)
+        .write_u16(user.obfuscated_port);
 
     Ok(Some(writer))
 }

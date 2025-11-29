@@ -1,4 +1,4 @@
-use std::io;
+use std::{io, net::IpAddr};
 
 pub struct BufferReader<'a> {
     buffer: &'a [u8],
@@ -92,6 +92,14 @@ impl BufferWriter {
 
     pub fn write_u32(&mut self, value: u32) -> &mut Self {
         self.buffer.extend_from_slice(&value.to_le_bytes());
+        self
+    }
+
+    pub fn write_ip(&mut self, value: IpAddr) -> &mut Self {
+        match value {
+            IpAddr::V4(v4) => self.buffer.extend_from_slice(&v4.to_bits().to_le_bytes()),
+            IpAddr::V6(v6) => self.buffer.extend_from_slice(&v6.to_bits().to_le_bytes()),
+        }
         self
     }
 

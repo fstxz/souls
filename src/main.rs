@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    net::{SocketAddr, SocketAddrV4},
+    net::SocketAddr,
     sync::{Arc, RwLock},
 };
 
@@ -24,12 +24,12 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync 
 
 #[derive(Default)]
 struct ConnectedUsers {
-    users: HashMap<SocketAddrV4, User>,
-    name_addr_map: HashMap<String, SocketAddrV4>,
+    users: HashMap<SocketAddr, User>,
+    name_addr_map: HashMap<String, SocketAddr>,
 }
 
 impl ConnectedUsers {
-    pub fn insert(&mut self, addr: SocketAddrV4, name: String) {
+    pub fn insert(&mut self, addr: SocketAddr, name: String) {
         self.users.insert(
             addr,
             User {
@@ -45,7 +45,7 @@ impl ConnectedUsers {
         self.name_addr_map.insert(name, addr);
     }
 
-    fn remove(&mut self, addr: SocketAddrV4) {
+    fn remove(&mut self, addr: SocketAddr) {
         if let Some(removed_user) = self.users.remove(&addr) {
             self.name_addr_map.remove(&removed_user.name);
         }
@@ -53,14 +53,14 @@ impl ConnectedUsers {
 }
 
 pub struct Context<'a, 'b> {
-    socket_addr: SocketAddrV4,
+    socket_addr: SocketAddr,
     reader: &'a mut BufferReader<'b>,
     db: &'a Db,
     users: Arc<RwLock<ConnectedUsers>>,
 }
 
 struct User {
-    addr: SocketAddrV4,
+    addr: SocketAddr,
     name: String,
     status: UserStatus,
     wait_port: u32,
@@ -97,9 +97,7 @@ fn main() -> Result<()> {
 }
 
 async fn handle_client(mut socket: TcpStream, users: Arc<RwLock<ConnectedUsers>>) -> Result<()> {
-    let SocketAddr::V4(socket_addr) = socket.peer_addr()? else {
-        return Err("IP is not v4".into());
-    };
+    let socket_addr = socket.peer_addr()?;
 
     let db = Db::open()?;
 
@@ -143,7 +141,7 @@ async fn handle_client(mut socket: TcpStream, users: Arc<RwLock<ConnectedUsers>>
 }
 
 fn parse_message(
-    socket_addr: SocketAddrV4,
+    socket_addr: SocketAddr,
     buffer: &[u8],
     db: &Db,
     users: Arc<RwLock<ConnectedUsers>>,
