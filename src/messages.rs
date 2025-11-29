@@ -142,6 +142,7 @@ fn get_peer_address(ctx: &mut Context) -> crate::Result<Option<BufferWriter>> {
 
     let mut writer = BufferWriter::new();
     writer
+        .write_u32(ServerMessage::GetPeerAddress as u32)
         .write_string(&user.name)
         .write_ip(user.addr.ip())
         .write_u32(user.wait_port)
