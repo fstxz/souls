@@ -107,11 +107,6 @@ impl BufferWriter {
         self
     }
 
-    pub fn extend_from_slice(&mut self, value: &[u8]) -> &mut Self {
-        self.buffer.extend_from_slice(value);
-        self
-    }
-
     pub fn buffer(&self) -> &[u8] {
         &self.buffer
     }

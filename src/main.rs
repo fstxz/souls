@@ -88,9 +88,7 @@ async fn handle_client(mut socket: TcpStream, users: Arc<RwLock<ConnectedUsers>>
                 match parse_message(socket_addr, &body, &db, users.clone()) {
                     Ok(Some(response)) => {
                         let mut writer = BufferWriter::new();
-                        writer
-                            .write_u32(response.len() as u32)
-                            .extend_from_slice(&response);
+                        writer.write_byte_array(&response);
 
                         socket.write_all(writer.buffer()).await?;
                     }
