@@ -39,6 +39,8 @@ impl ConnectedUsers {
                 wait_port: 0,
                 obfuscation_type: 0,
                 obfuscated_port: 0,
+                dirs: 0,
+                files: 0,
             },
         );
 
@@ -66,6 +68,8 @@ struct User {
     wait_port: u32,
     obfuscation_type: u32,
     obfuscated_port: u16,
+    dirs: u32,
+    files: u32,
 }
 
 /// Soulseek server.

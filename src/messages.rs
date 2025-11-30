@@ -179,8 +179,15 @@ fn set_status(ctx: &mut Context) -> crate::Result<Option<BufferWriter>> {
 
 // https://github.com/nicotine-plus/nicotine-plus/blob/master/doc/SLSKPROTOCOL.md#server-code-35
 fn shared_folders_files(ctx: &mut Context) -> crate::Result<Option<BufferWriter>> {
-    let _dirs = ctx.reader.read_u32()?;
-    let _files = ctx.reader.read_u32()?;
+    let mut users = ctx.users.write().unwrap();
+
+    let Some(user) = users.users.get_mut(&ctx.socket_addr) else {
+        return Err(format!("user with this address doesn't exist ({})", ctx.socket_addr).into());
+    };
+
+    user.dirs = ctx.reader.read_u32()?;
+    user.files = ctx.reader.read_u32()?;
+
     Ok(None)
 }
 
