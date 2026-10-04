@@ -23,6 +23,7 @@ pub enum ServerMessage {
     GetPeerAddress = 3,
     GetUserStatus = 7,
     SetStatus = 28,
+    ServerPing = 32,
     SharedFoldersFiles = 35,
     RoomList = 64,
     HaveNoParent = 71,
@@ -41,6 +42,7 @@ impl ServerMessage {
             3 => Some(Self::GetPeerAddress),
             7 => Some(Self::GetUserStatus),
             28 => Some(Self::SetStatus),
+            32 => Some(Self::ServerPing),
             35 => Some(Self::SharedFoldersFiles),
             64 => Some(Self::RoomList),
             71 => Some(Self::HaveNoParent),
@@ -60,6 +62,7 @@ impl ServerMessage {
             Self::GetPeerAddress => get_peer_address(ctx),
             Self::GetUserStatus => get_user_status(ctx),
             Self::SetStatus => set_status(ctx),
+            Self::ServerPing => server_ping(ctx),
             Self::SharedFoldersFiles => shared_folders_files(ctx),
             Self::RoomList => room_list(ctx),
             Self::HaveNoParent => have_no_parent(ctx),
@@ -174,6 +177,11 @@ fn set_status(ctx: &mut Context) -> crate::Result<Option<BufferWriter>> {
         .users
         .entry(ctx.socket_addr)
         .and_modify(|v| v.status = status);
+    Ok(None)
+}
+
+// https://github.com/nicotine-plus/nicotine-plus/blob/master/doc/SLSKPROTOCOL.md#server-code-32
+fn server_ping(_ctx: &mut Context) -> crate::Result<Option<BufferWriter>> {
     Ok(None)
 }
 
