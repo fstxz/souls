@@ -22,25 +22,6 @@ impl Db {
             .map_err(|e| e.into())
     }
 
-    pub fn user_exists(&self, username: &str) -> crate::Result<bool> {
-        self.0
-            .query_one(
-                "SELECT COUNT(*) FROM souls WHERE name = ?1",
-                [username],
-                |row| row.get::<_, bool>(0),
-            )
-            .map_err(|e| e.into())
-    }
-
-    pub fn insert_user(&self, username: &str, password: &str) -> crate::Result<usize> {
-        self.0
-            .execute(
-                "INSERT INTO souls (name, password, privileged) VALUES (?1, ?2, ?3)",
-                (&username, &password, true),
-            )
-            .map_err(|e| e.into())
-    }
-
     pub fn is_user_privileged(&self, username: &str) -> crate::Result<bool> {
         self.0
             .query_one(
@@ -49,5 +30,15 @@ impl Db {
                 |row| row.get::<_, bool>(0),
             )
             .map_err(|e| e.into())
+    }
+
+    pub fn get_user_password(&self, username: &str) -> Option<String> {
+        self.0
+            .query_one(
+                "SELECT password FROM souls WHERE name = ?1",
+                [username],
+                |row| row.get::<_, String>(0),
+            )
+            .ok()
     }
 }

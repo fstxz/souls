@@ -80,46 +80,54 @@ impl ServerMessage {
 fn login(ctx: &mut Context) -> crate::Result<Option<BufferWriter>> {
     let username = ctx.reader.read_string()?;
     let password = ctx.reader.read_string()?;
-    let _version = ctx.reader.read_u32()?;
+    let _major_version = ctx.reader.read_u32()?;
     let _hash = ctx.reader.read_string()?;
     let _minor_version = ctx.reader.read_u32()?;
 
-    let mut writer = BufferWriter::new();
-    writer.write_u32(ServerMessage::Login as u32);
-
-    if !ctx.db.user_exists(&username)? {
-        // writer.write_bool(false).write_string("INVALIDPASS");
-        // return Ok(Some(writer));
-        ctx.db.insert_user(&username, &password)?;
-    }
-
-    let hash: String = md5::compute(password.as_bytes())
+    let password_hash: String = md5::compute(password)
         .iter()
         .map(|b| format!("{:02x}", b))
         .collect();
 
-    writer
-        .write_bool(true)
-        .write_string("Hello")
-        .write_ip(ctx.socket_addr.ip())
-        .write_string(&hash)
-        .write_bool(true);
+    let mut writer = BufferWriter::new();
+    writer.write_u32(ServerMessage::Login as u32);
 
-    let mut users = ctx.users.write().unwrap();
-    users.insert(ctx.socket_addr, username);
+    match ctx.db.get_user_password(&username) {
+        Some(pass) => {
+            if pass != password_hash {
+                writer.write_bool(false).write_string("INVALIDPASS");
+                return Ok(Some(writer));
+            }
 
-    Ok(Some(writer))
+            writer
+                .write_bool(true)
+                .write_string("Hello")
+                .write_ip(ctx.socket_addr.ip())
+                .write_string(&password_hash)
+                .write_bool(true);
+
+            let mut users = ctx.users.write().unwrap();
+            users.insert(ctx.socket_addr, username);
+
+            Ok(Some(writer))
+        }
+        None => {
+            writer.write_bool(false).write_string("INVALIDUSERNAME");
+            return Ok(Some(writer));
+        }
+    }
 }
 
 // https://github.com/nicotine-plus/nicotine-plus/blob/master/doc/SLSKPROTOCOL.md#server-code-2
 fn set_wait_port(ctx: &mut Context) -> crate::Result<Option<BufferWriter>> {
+    let wait_port = ctx.reader.read_u32()?;
     let mut users = ctx.users.write().unwrap();
 
     let Some(user) = users.users.get_mut(&ctx.socket_addr) else {
         return Err(format!("user with this address doesn't exist ({})", ctx.socket_addr).into());
     };
 
-    user.wait_port = ctx.reader.read_u32()?;
+    user.wait_port = wait_port;
 
     if !ctx.reader.is_empty() {
         user.obfuscation_type = ctx.reader.read_u32()?;
