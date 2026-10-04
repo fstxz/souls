@@ -113,7 +113,7 @@ fn login(ctx: &mut Context) -> crate::Result<Option<BufferWriter>> {
         }
         None => {
             writer.write_bool(false).write_string("INVALIDUSERNAME");
-            return Ok(Some(writer));
+            Ok(Some(writer))
         }
     }
 }

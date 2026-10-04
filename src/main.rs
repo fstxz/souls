@@ -78,6 +78,18 @@ struct Args {
     /// port to listen on (default: 2242)
     #[argh(option, short = 'p', default = "2242")]
     port: u16,
+    #[argh(subcommand)]
+    add_user: Option<AddUser>,
+}
+
+/// Adds a new user.
+#[derive(FromArgs)]
+#[argh(subcommand, name = "adduser")]
+struct AddUser {
+    #[argh(positional)]
+    name: String,
+    #[argh(positional)]
+    password: String,
 }
 
 fn main() -> Result<()> {
@@ -85,6 +97,13 @@ fn main() -> Result<()> {
     let args = argh::from_env::<Args>();
 
     setup_db()?;
+
+    if let Some(add_user) = &args.add_user {
+        let db = Db::open()?;
+        db.add_user(&add_user.name, &add_user.password)
+            .map_err(|e| format!("failed to add new user: {e}"))?;
+        return Ok(());
+    }
 
     smol::block_on(async {
         let users = Arc::new(RwLock::new(ConnectedUsers::default()));
